@@ -38,6 +38,17 @@ function listarCategorias(){
                             <th scope="row">${categoria.id}</th>
                             <td>${categoria.nombreca}</td>
                             <td>${categoria.descripcionca}</td>
+                            <td>
+                            <button type="button" class="btn btn-outline-danger" 
+                            onclick="eliminaCategoria('${categoria.id}')">
+                                <i class="fa-solid fa-user-minus"></i>
+                            </button>
+                            <a href="#" onclick="verModificarCategoria('${categoria.id}')" class="btn btn-outline-warning">
+                                <i class="fa-solid fa-user-pen"></i>
+                            </a>
+                            
+                            </td>
+                            
                         </tr>
                     `;
                 
@@ -48,6 +59,86 @@ function listarCategorias(){
             `;
             document.getElementById("datos").innerHTML = categorias;
     })
+}
+
+function eliminaCategoria(id){
+    validaToken();
+    var settings={
+        method: 'DELETE',
+        headers:{
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': localStorage.token
+        },
+    }
+    fetch(urlApi+"/categoria/"+id,settings)
+    .then((data) => {
+        console.log(data); // JSON data parsed by `data.json()` call
+        listarCategorias();
+        alertas("Se ha eliminado la categoria exitosamente!",2)
+      })
+}
+
+function verModificarCategoria(id){
+    validaToken();
+    var settings={
+        method: 'GET',
+        headers:{
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': localStorage.token
+        },
+    }
+    fetch(urlApi+"/categoria/"+id,settings)
+    .then(response => response.json())
+    .then(function(categoria){
+            var cadena='';
+            if(categoria){                
+                cadena = `
+                <div class="p-3 mb-2 bg-light text-dark">
+                    <h1 class="display-5"><i class="fa-solid fa-user-pen"></i>Modificar Categoria</h1>
+                </div>
+              
+                <form action="" method="post" id="myForm">
+                    <input type="hidden" name="id" id="id" value="${categoria.id}">
+                    <label for="nombreca" class="form-label">Category name</label>
+                    <input type="text" class="form-control" name="nombreca" id="nombreca" required value="${categoria.nombreca}"> <br>
+                    <label for="descripcionca"  class="form-label">Category description</label>
+                    <input type="text" class="form-control" name="descripcionca" id="descripcionca" required value="${categoria.descripcionca}"> <br>
+                    <button type="button" class="btn btn-outline-warning" 
+                        onclick="modificarCategoria('${categoria.id}')">Modificar
+                    </button>
+                </form>`;
+            }
+            document.getElementById("contentModalPrueba").innerHTML = cadena;
+            var myModal = new bootstrap.Modal(document.getElementById('modalCategoria'))
+            myModal.toggle();
+    })
+}
+
+async function modificarCategoria(id){
+    validaToken();
+    var myForm = document.getElementById("myForm");
+    var formData = new FormData(myForm);
+    var jsonData = {};
+    for(var [k, v] of formData){//convertimos los datos a json
+        jsonData[k] = v;
+    }
+    const request = await fetch(urlApi+"/categoria/"+id, {
+        method: 'PUT',
+        headers:{
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': localStorage.token
+        },
+        body: JSON.stringify(jsonData)
+    });
+    listarCategorias();
+    alertas("Se ha modificado la categoria exitosamente!",1)
+    document.getElementById("contentModalPrueba").innerHTML = '';
+    var myModalEl = document.getElementById('modalCategoria')
+    var modal = bootstrap.Modal.getInstance(myModalEl) // Returns a Bootstrap modal instance
+    modal.hide();
 }
 
 function registerForm(auth=false){
@@ -70,6 +161,7 @@ function registerForm(auth=false){
             myModal.toggle();
 }
 
+
 async function crearCategoria(auth=false){
     var myForm = document.getElementById("myFormReg");
     var formData = new FormData(myForm);
@@ -77,12 +169,17 @@ async function crearCategoria(auth=false){
     for(var [k, v] of formData){//convertimos los datos a json
         jsonData[k] = v;
     }
+    var categoria = jsonData.categoria
+    jsonData.categoria = {
+        id: categoria 
+    }
     console.log("data user ",jsonData);
     const request = await fetch(urlApi+"/categoria", {
         method: 'POST',
         headers:{
             'Accept': 'application/json',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': localStorage.token
         },
         body: JSON.stringify(jsonData)
     })
@@ -118,3 +215,4 @@ function validaToken(){
         salir();
     }
 }
+
